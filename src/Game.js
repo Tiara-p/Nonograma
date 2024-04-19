@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import PengineClient from './PengineClient';
 import Board from './Board';
+import ToggleButton from './ToggleButton';
 
 let pengine;
 
@@ -11,6 +12,7 @@ function Game() {
   const [rowsClues, setRowsClues] = useState(null);
   const [colsClues, setColsClues] = useState(null);
   const [waiting, setWaiting] = useState(false);
+  const [mode, setMode] = useState('paint');
 
   useEffect(() => {
     // Creation of the pengine server instance.    
@@ -67,7 +69,9 @@ function Game() {
       <div className="game-info">
         {statusText}
       </div>
+    <ToggleButton></ToggleButton>
     </div>
+    
   );
 }
 

@@ -66,3 +66,22 @@ body {
 .game-info {
   margin-left: 20px;
 }
+
+.toggle-button {
+  background-color: #4CAF50; /* Color de fondo verde */
+  border: none; /* Sin borde */
+  color: white; /* Color de texto blanco */
+  padding: 10px 20px; /* Espaciado interno */
+  text-align: center; /* Texto centrado */
+  text-decoration: none; /* Sin subrayado */
+  display: inline-block; /* Mostrar como elemento en línea */
+  font-size: 16px; /* Tamaño de fuente */
+  margin: 4px 2px; /* Margen exterior */
+  cursor: pointer; /* Cursor de puntero al pasar */
+  border-radius: 10px; /* Bordes redondeados */
+  transition: background-color 0.3s; /* Transición suave del color de fondo */
+}
+
+.toggle-button:hover {
+  background-color: #45a049; /* Color de fondo más oscuro al pasar el cursor */
+}
