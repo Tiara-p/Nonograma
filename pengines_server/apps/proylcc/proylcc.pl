@@ -34,4 +34,52 @@ put(Content, [RowN, ColN], _RowsClues, _ColsClues, Grid, NewGrid, 0, 0):-
 	(replace(Cell, ColN, _, Row, NewRow),
 	Cell == Content
 		;
-	replace(_Cell, ColN, Content, Row, NewRow)).
+	replace(_Cell, ColN, Content, Row, NewRow)),
+	getRowCluesList(),getColCluesList(numberOfRows(Grid,ColLenght),Grid,ColN,Counter, Lista).
+
+	
+getRowCluesList().
+
+
+
+getColCluesList(0,[Head],ColN,Counter,Lista):-(nth0(ColN,Head,Cc),Cc=='#',Counter is Counter + 1), Lista=[].
+getColCluesList(ColLength,[Head|_Body],ColN,Counter,ListaZ):-
+		ColLength > 0,
+		ColLengthAux is ColLength-1,
+		getColCluesList(ColLengthAux,Head, ColN, Counter,Lista),
+		(nth0(ColN,Head,Cc), procesar_casos(Cc,Counter,Lista,NuevoCounter, NuevaLista), Counter is NuevoCounter, ListaZ is NuevaLista).
+
+% Caso 1: Cc es igual a # y Counter es mayor a 0
+procesar_casos(Cc, Counter, Lista, NuevoCounter, NuevaLista) :-
+    Cc = '#',
+    Counter > 0,
+    NuevoCounter is Counter + 1,
+    NuevaLista = Lista.
+
+% Caso 2: Cc es igual a # y Counter es 0
+procesar_casos(Cc, 0, Lista, NuevoCounter, NuevaLista) :-
+    Cc = '#',
+    NuevoCounter is 1,
+    NuevaLista = Lista.
+
+% Caso 3: Cc es distinto a # y Counter es mayor a 0
+procesar_casos(Cc, Counter, Lista, 0, NuevaLista) :-
+    Cc \= '#',
+    Counter > 0,
+    append(Lista, [Counter], NuevaLista).
+
+% Caso 4: Cc es distinto a # y Counter es 0
+procesar_casos(_, 0, Lista, 0, Lista).
+
+% Comprueba si dos listas son iguales
+checkLists([], []).
+checkLists([X|Xs], [Y|Ys]):-checkLists(Xs,Ys).
+
+% Predicate to obtain the number of columns of a grid
+numberOfCols([Row|_], NumCols) :-
+    length(Row, NumCols).
+
+% Predicate to obtain the number of rows of a grid
+numberOfRows(Grid, NumRows) :-
+    length(Grid, NumRows).
+
