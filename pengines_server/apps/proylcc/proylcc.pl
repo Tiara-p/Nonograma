@@ -35,45 +35,56 @@ put(Content, [RowN, ColN], _RowsClues, _ColsClues, Grid, NewGrid, 0, 0):-
 	Cell == Content
 		;
 	replace(_Cell, ColN, Content, Row, NewRow)),
-	getRowCluesList(),getColCluesList(numberOfRows(Grid,ColLenght),Grid,ColN,Counter, Lista).
+	invertir_verticalmente(Grid,InvertedGrid),
+	%getRowCluesList()%
+	numberOfRows(Grid,ColLenght),
+	getColCluesList(ColLenght,ColLenght,InvertedGrid,ColN,0, []).
 
 	
-getRowCluesList().
+%getRowCluesList()%
 
+getColCluesList(_,1, [Body], ColN, Counter, Lista) :-
+    nth0(ColN, Body, Cc),
+    (Cc == '#' -> Counter = 1; Counter = 0),
+    Lista = [].
 
-
-getColCluesList(0,[Head],ColN,Counter,Lista):-(nth0(ColN,Head,Cc),Cc=='#',Counter is Counter + 1), Lista=[].
-getColCluesList(ColLength,[Head|_Body],ColN,Counter,ListaZ):-
+getColCluesList(FinalCol,ColLength,[Head|Body],ColN,Counter,ListaFinal):-
 		ColLength > 0,
 		ColLengthAux is ColLength-1,
-		getColCluesList(ColLengthAux,Head, ColN, Counter,Lista),
-		(nth0(ColN,Head,Cc), procesar_casos(Cc,Counter,Lista,NuevoCounter, NuevaLista), Counter is NuevoCounter, ListaZ is NuevaLista).
+		getColCluesList(FinalCol, ColLengthAux,Body, ColN, CounterAnterior,ListaAnterior),
+		nth0(ColN,Head,Cc), procesar_casos(Cc,CounterAnterior,ListaAnterior,Counter,Lista),
+		procesar_instancia_final(FinalCol, ColLength, Lista,Counter, ListaFinal).
 
 % Caso 1: Cc es igual a # y Counter es mayor a 0
-procesar_casos(Cc, Counter, Lista, NuevoCounter, NuevaLista) :-
-    Cc = '#',
-    Counter > 0,
-    NuevoCounter is Counter + 1,
-    NuevaLista = Lista.
+procesar_casos('#',CounterAnterior, ListaAnterior, Counter, Lista) :-
+    CounterAnterior> 0,
+    Counter is CounterAnterior + 1,
+    Lista = ListaAnterior.
 
 % Caso 2: Cc es igual a # y Counter es 0
-procesar_casos(Cc, 0, Lista, NuevoCounter, NuevaLista) :-
-    Cc = '#',
-    NuevoCounter is 1,
-    NuevaLista = Lista.
+procesar_casos('#', 0, ListaAnterior, Counter, Lista) :-
+    Counter is 1,
+    Lista = ListaAnterior.
 
 % Caso 3: Cc es distinto a # y Counter es mayor a 0
-procesar_casos(Cc, Counter, Lista, 0, NuevaLista) :-
-    Cc \= '#',
-    Counter > 0,
-    append(Lista, [Counter], NuevaLista).
+procesar_casos(_, CounterAnterior, ListaAnterior, 0, Lista) :-
+    CounterAnterior > 0,
+    append(ListaAnterior, [CounterAnterior], Lista).
 
 % Caso 4: Cc es distinto a # y Counter es 0
-procesar_casos(_, 0, Lista, 0, Lista).
+procesar_casos(_, 0, _ListaAnterior, 0, _Lista).
+
+
+%------
+procesar_instancia_final(FinalCol, ActualCol, Lista, Counter,ListaFinal):-
+    FinalCol = ActualCol, Counter > 0, !,
+    append(Lista, [Counter], ListaFinal).
+
+procesar_instancia_final(_, _, Lista,_, Lista). % Si no se cumple la condición, ListaFinal es igual a Lista
 
 % Comprueba si dos listas son iguales
 checkLists([], []).
-checkLists([X|Xs], [Y|Ys]):-checkLists(Xs,Ys).
+checkLists([_|Xs], [_|Ys]):-checkLists(Xs,Ys).
 
 % Predicate to obtain the number of columns of a grid
 numberOfCols([Row|_], NumCols) :-
@@ -82,4 +93,9 @@ numberOfCols([Row|_], NumCols) :-
 % Predicate to obtain the number of rows of a grid
 numberOfRows(Grid, NumRows) :-
     length(Grid, NumRows).
+%----------------
+invertir_verticalmente([], []).
+invertir_verticalmente([Fila|Filas], MatrizInvertida) :-
+    invertir_verticalmente(Filas, FilasInvertidas),
+    append(FilasInvertidas, [Fila], MatrizInvertida).
 
