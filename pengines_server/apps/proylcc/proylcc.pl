@@ -38,7 +38,7 @@ put(Content, [RowN, ColN], _RowsClues, _ColsClues, Grid, NewGrid, 0, 0):-
 	invertir_verticalmente(Grid,InvertedGrid),
 	%getRowCluesList()%
 	numberOfRows(Grid,ColLenght),
-	getColCluesList(ColLenght,ColLenght,InvertedGrid,ColN,0, []).
+	getColCluesList(ColLenght,ColLenght,InvertedGrid,ColN,0, Lista).
 
 	
 %getRowCluesList()%
@@ -83,8 +83,9 @@ procesar_instancia_final(FinalCol, ActualCol, Lista, Counter,ListaFinal):-
 procesar_instancia_final(_, _, Lista,_, Lista). % Si no se cumple la condición, ListaFinal es igual a Lista
 
 % Comprueba si dos listas son iguales
-checkLists([], []).
-checkLists([_|Xs], [_|Ys]):-checkLists(Xs,Ys).
+checkLists([], []). % Ambas listas vacías son iguales.
+checkLists([X|Xs], [X|Ys]) :- checkLists(Xs, Ys). % Las cabezas son iguales, revisa las colas.
+
 
 % Predicate to obtain the number of columns of a grid
 numberOfCols([Row|_], NumCols) :-
