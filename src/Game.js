@@ -12,6 +12,8 @@ function Game() {
   const [colsClues, setColsClues] = useState(null);
   const [waiting, setWaiting] = useState(false);
   const [mode, setMode] = useState('paint');
+  const [rowSatisfied, setRowsCluesSat] = useState([]);
+  const [colSatisfied, setColsCluesSat] = useState([]);
 
   useEffect(() => {
     // Creation of the pengine server instance.    
@@ -28,6 +30,8 @@ function Game() {
         setGrid(response['Grid']);
         setRowsClues(response['RowClues']);
         setColsClues(response['ColumClues']);
+        setRowsCluesSat(Array(response['RowClues'].length).fill(false));
+        setColsCluesSat(Array(response['ColumClues'].length).fill(false));
       }
     });
   }
@@ -37,6 +41,7 @@ function Game() {
     if (waiting) {
       return;
     }
+  
     // Build Prolog query to make a move and get the new satisfacion status of the relevant clues.    
     const squaresS = JSON.stringify(grid).replaceAll('"_"', '_'); // Remove quotes for variables. squares = [["X",_,_,_,_],["X",_,"X",_,_],["X",_,_,_,_],["#","#","#",_,_],[_,_,"#","#","#"]]
     let content;
@@ -53,6 +58,21 @@ function Game() {
     pengine.query(queryS, (success, response) => {
       if (success) {
         setGrid(response['ResGrid']);
+         // Accede a RowSat y ColSat desde la respuesta de la consulta.
+      const RowSat = response['RowSat'];
+      const ColSat = response['ColSat'];
+
+      const newRowSatisfied = [...rowSatisfied];
+      newRowSatisfied[i] = RowSat;
+      setRowsCluesSat(newRowSatisfied);
+
+      const newColSatisfied = [...colSatisfied];
+      newColSatisfied[j] = ColSat;
+      setColsCluesSat(newColSatisfied);
+      //alert("New Col Satisfied: " + JSON.stringify(newColSatisfied));
+
+      // Muestra los valores en una alerta.
+      //alert("RowSat: " + RowSat + ", ColSat: " + ColSat);
       }
       setWaiting(false);
     });
@@ -74,6 +94,8 @@ function Game() {
         grid={grid}
         rowsClues={rowsClues}
         colsClues={colsClues}
+        rowSatisfied={rowSatisfied}
+        colSatisfied={colSatisfied}
         onClick={(i, j) => handleClick(i, j)}
       />
       <div className="game-info">
