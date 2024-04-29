@@ -2,7 +2,7 @@ import React from 'react';
 import Square from './Square';
 import Clue from './Clue';
 
-function Board({ grid, rowsClues, colsClues, onClick }) {
+function Board({ grid, rowsClues, colsClues, onClick , rowSatisfied, colSatisfied }) {
     const numOfRows = grid.length;
     const numOfCols = grid[0].length;
     return (
@@ -23,7 +23,7 @@ function Board({ grid, rowsClues, colsClues, onClick }) {
             >
                 <div>{/* top-left corner square */}</div>
                 {colsClues.map((clue, i) =>
-                    <Clue clue={clue} key={i} />
+                    <Clue clue={clue} sat={colSatisfied[i]} key={i} />
                 )}
             </div>
             <div className="horizontal">
@@ -36,7 +36,7 @@ function Board({ grid, rowsClues, colsClues, onClick }) {
                     }}
                 >
                     {rowsClues.map((clue, i) =>
-                        <Clue clue={clue} key={i} />
+                        <Clue clue={clue} sat={rowSatisfied[i]} key={i} />
                     )}
                 </div>
                 <div className="board"

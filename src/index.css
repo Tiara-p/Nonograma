@@ -49,6 +49,10 @@ body {
   margin: 5px;
   padding: 3px;
 }
+.clueSat {
+  background-color: green;
+  color: white;
+}
 
 .clue div {
   margin: 2px
