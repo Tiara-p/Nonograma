@@ -22,6 +22,14 @@ function Game() {
     PengineClient.init(handleServerReady);
   }, []);
 
+  useEffect(() => {
+    // Comprobación de si todos los elementos en rowSatisfied y colSatisfied son true.
+    const allRowsSatisfied = rowSatisfied.every(satisfied => satisfied);
+    const allColsSatisfied = colSatisfied.every(satisfied => satisfied);
+
+  }, [rowSatisfied, colSatisfied]);
+
+
   function handleServerReady(instance) {
     pengine = instance;
     const queryS = 'init(RowClues, ColumClues, Grid)';
@@ -69,10 +77,6 @@ function Game() {
       const newColSatisfied = [...colSatisfied];
       newColSatisfied[j] = ColSat;
       setColsCluesSat(newColSatisfied);
-      //alert("New Col Satisfied: " + JSON.stringify(newColSatisfied));
-
-      // Muestra los valores en una alerta.
-      //alert("RowSat: " + RowSat + ", ColSat: " + ColSat);
       }
       setWaiting(false);
     });
@@ -87,27 +91,37 @@ function Game() {
     return null;
   }
 
-  const statusText = 'Keep playing!';
-  return (
-    <div className="game">
-      <Board
-        grid={grid}
-        rowsClues={rowsClues}
-        colsClues={colsClues}
-        rowSatisfied={rowSatisfied}
-        colSatisfied={colSatisfied}
-        onClick={(i, j) => handleClick(i, j)}
-      />
-      <div className="game-info">
-        {statusText}
-      </div>
-      <div class="container">
-        <input type="checkbox" id="check" class="switch-input" checked={mode === 'paint'} onChange={handleModeChange} />
-        <label for="check" class="button switch-label">
-        </label>
-      </div>
 
+  let statusText;
+  if (rowSatisfied.every(satisfied => satisfied) && colSatisfied.every(satisfied => satisfied)) {
+    statusText = "¡Level completed!";
+  }else{
+    statusText = "Keep playing";
+  }
+  return (
+  <div className="game" style={{ display: 'flex', flexDirection:'column', justifyContent: 'center', alignItems: 'center', height: '100%', width: '100%' }}>
+    <div className="league-spartan-text">
+        Nonograma
     </div>
+    <Board
+      grid={grid}
+      rowsClues={rowsClues}
+      colsClues={colsClues}
+      rowSatisfied={rowSatisfied}
+      colSatisfied={colSatisfied}
+      onClick={(i, j) => handleClick(i, j)}
+    />
+    <div className="game-info" style={{color:'#ece5f0'}}>
+      {statusText}
+      <div className="container">
+        <input type="checkbox" id="check" className="switch-input" checked={mode === 'paint'} onChange={handleModeChange} />
+        <label htmlFor="check" className="button switch-label"></label>
+    </div>
+    </div>
+    
+    
+  </div>
+  
     
   );
 }
