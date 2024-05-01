@@ -12,6 +12,7 @@ function Game() {
   const [colsClues, setColsClues] = useState(null);
   const [waiting, setWaiting] = useState(false);
   const [mode, setMode] = useState('paint');
+  const [gameCompleted, setGameCompleted] = useState(false);
   const [rowSatisfied, setRowsCluesSat] = useState([]);
   const [colSatisfied, setColsCluesSat] = useState([]);
 
@@ -26,6 +27,12 @@ function Game() {
     // Comprobación de si todos los elementos en rowSatisfied y colSatisfied son true.
     const allRowsSatisfied = rowSatisfied.every(satisfied => satisfied);
     const allColsSatisfied = colSatisfied.every(satisfied => satisfied);
+
+    if (allRowsSatisfied && allColsSatisfied) {
+      setGameCompleted(true);
+    }else{
+      setGameCompleted(false);
+    }
 
   }, [rowSatisfied, colSatisfied]);
 
@@ -45,8 +52,7 @@ function Game() {
   }
 
   function handleClick(i, j) {
-    // No action on click if we are waiting.
-    if (waiting) {
+    if (waiting || gameCompleted){
       return;
     }
   
@@ -107,9 +113,10 @@ function Game() {
       grid={grid}
       rowsClues={rowsClues}
       colsClues={colsClues}
+      onClick={(i, j) => handleClick(i, j)}
       rowSatisfied={rowSatisfied}
       colSatisfied={colSatisfied}
-      onClick={(i, j) => handleClick(i, j)}
+      gameCompleted={gameCompleted}
     />
     <div className="game-info" style={{color:'#ece5f0'}}>
       {statusText}
