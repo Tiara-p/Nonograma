@@ -35,72 +35,87 @@ put(Content, [RowN, ColN], RowsClues, ColsClues, Grid, NewGrid, RowSat, ColSat):
 	Cell == Content
 		;
 	replace(_Cell, ColN, Content, Row, NewRow)),
-	invertir_verticalmente(NewGrid,InvertedGrid),
+	investVertically(NewGrid,InvertedGrid),
 	numberOfRows(NewGrid,ColLenght),
-	getColCluesList(ColLenght,ColLenght,InvertedGrid,ColN,Counter, Lista),
+	getColStateList(ColLenght,ColLenght,InvertedGrid,ColN,Counter, List),
 	nth0(ColN,ColsClues,ColNClues),
-	checkLists(Lista,ColNClues,ColSat),
+	checkLists(List,ColNClues,ColSat),
 	numberOfCols(NewGrid,RowLenght),
 	nth0(RowN,NewGrid,RowNList),
-	getRowCluesList(RowLenght,RowLenght,RowNList,CounterR,ListaR),
-	invertir_lista(ListaR,ListaRInvertida),
+	getRowStateList(RowLenght,RowLenght,RowNList,CounterR,RList),
+	investList(RList,RListInverted),
 	nth0(RowN,RowsClues,RowNClues),
-	checkLists(ListaRInvertida,RowNClues,RowSat).
+	checkLists(RListInverted,RowNClues,RowSat).
 
-getRowCluesList(_,1, [Body], Counter, Lista) :-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+getRowStateList(_,1, [Body], Counter, List) :-
 	(Body == "#" -> Counter = 1; Counter = 0),
-	Lista = [].
+	List = [].
 	
-getRowCluesList(FinalRow,RowLength,[Head|Body],Counter,ListaFinal):-
+getRowStateList(FinalRow,RowLength,[Head|Body],Counter,FinalList):-
 	RowLength > 0,
 	RowLengthAux is RowLength-1,
-	getRowCluesList(FinalRow, RowLengthAux,Body, CounterAnterior,ListaAnterior),
+	getRowStateList(FinalRow, RowLengthAux,Body, FormerCounter,FormerList),
 	(Head == "#" -> NewCc = Head ; NewCc = "0"),
-	procesar_casos(NewCc,CounterAnterior,ListaAnterior,Counter,Lista),
-	procesar_instancia_final(FinalRow, RowLength, Lista,Counter, ListaFinal).
+	processCases(NewCc,FormerCounter,FormerList,Counter,List),
+	processLastInstance(FinalRow, RowLength, List,Counter, FinalList).
 
-getColCluesList(_,1, [Body], ColN, Counter, Lista) :-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+getColStateList(_,1, [Body], ColN, Counter, List) :-
     nth0(ColN, Body, Cc),
     (Cc == "#" -> Counter = 1; Counter = 0),
-    Lista = [].
+    List = [].
 
-getColCluesList(FinalCol,ColLength,[Head|Body],ColN,Counter,ListaFinal):-
+getColStateList(FinalCol,ColLength,[Head|Body],ColN,Counter,FinalList):-
 		ColLength > 0,
 		ColLengthAux is ColLength-1,
-		getColCluesList(FinalCol, ColLengthAux,Body, ColN, CounterAnterior,ListaAnterior),
+		getColStateList(FinalCol, ColLengthAux,Body, ColN, FormerCounter,FormerList),
 		nth0(ColN,Head,Cc),
 		(Cc == "#" -> NewCc = Cc ; NewCc = "0"),
-		procesar_casos(NewCc,CounterAnterior,ListaAnterior,Counter,Lista),
-		procesar_instancia_final(FinalCol, ColLength, Lista,Counter, ListaFinal).
+		processCases(NewCc,FormerCounter,FormerList,Counter,List),
+		processLastInstance(FinalCol, ColLength, List,Counter, FinalList).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % 
-procesar_casos("0", CounterAnterior, ListaAnterior, 0, Lista) :-
-    CounterAnterior > 0,
-    append(ListaAnterior, [CounterAnterior], Lista).
+processCases("0", FormerCounter, FormerList, 0, List) :-
+    FormerCounter > 0,
+    append(FormerList, [FormerCounter], List).
 % 
-procesar_casos("0", 0, ListaAnterior, 0, ListaAnterior).
+processCases("0", 0, FormerList, 0, FormerList).
 % 
-procesar_casos("#",CounterAnterior, ListaAnterior, Counter, Lista) :-
-    CounterAnterior> 0,
-    Counter is CounterAnterior + 1,
-    Lista = ListaAnterior.
+processCases("#",FormerCounter, FormerList, Counter, List) :-
+    FormerCounter> 0,
+    Counter is FormerCounter + 1,
+    List = FormerList.
 % 
-procesar_casos("#", 0, ListaAnterior, Counter, Lista) :-
+processCases("#", 0, FormerList, Counter, List) :-
     Counter is 1,
-    Lista = ListaAnterior.
-%------
-procesar_instancia_final(FinalCol, ActualCol, Lista, Counter,ListaFinal):-
-    FinalCol = ActualCol, Counter > 0, 
-    append(Lista, [Counter], ListaFinal).
-%-------
-procesar_instancia_final(_, _, Lista,_, Lista). % Si no se cumple la condición, ListaFinal es igual a Lista
+    List = FormerList.
 
-% Comprueba si dos listas son iguales
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%------
+processLastInstance(FinalCol, ActualCol, List, Counter,FinalList):-
+    FinalCol = ActualCol, Counter > 0, 
+    append(List, [Counter], FinalList).
+%-------
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+processLastInstance(_, _, List,_, List). % Si no se cumple la condición, FinalList es igual a List
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Comprueba si dos Lists son iguales
 checkLists([], [], true).
 checkLists([X|Xs], [Y|Ys], Result) :-
     X = Y,
     checkLists(Xs, Ys, Result).
 checkLists(_, _, false).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 % Predicate to obtain the number of columns of a grid
 numberOfCols([Row|_], NumCols) :-
     length(Row, NumCols).
@@ -108,14 +123,19 @@ numberOfCols([Row|_], NumCols) :-
 numberOfRows(Grid, NumRows) :-
     length(Grid, NumRows).
 %----------------
-invertir_verticalmente([], []).
-invertir_verticalmente([Fila|Filas], MatrizInvertida) :-
-    invertir_verticalmente(Filas, FilasInvertidas),
-    append(FilasInvertidas, [Fila], MatrizInvertida).
 
-	invertir_lista([], []). % La lista vacía se invierte en la lista vacía
-invertir_lista([X|Xs], Y) :- % La lista invertida de [X|Xs] es la concatenación de la lista invertida de Xs con [X]
-    invertir_lista(Xs, InvertidaXs),
-    append(InvertidaXs, [X], Y).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+investVertically([], []).
+investVertically([Fila|Filas], MatrizInverted) :-
+    investVertically(Filas, FilasInverteds),
+    append(FilasInverteds, [Fila], MatrizInverted).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+	investList([], []). % La List vacía se invierte en la List vacía
+investList([X|Xs], Y) :- % La List Inverted de [X|Xs] es la concatenación de la List Inverted de Xs con [X]
+    investList(Xs, InvertedXs),
+    append(InvertedXs, [X], Y).
 
 

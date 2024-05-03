@@ -13,8 +13,8 @@ function Game() {
   const [waiting, setWaiting] = useState(false);
   const [mode, setMode] = useState('paint');
   const [gameCompleted, setGameCompleted] = useState(false);
-  const [rowSatisfied, setRowsCluesSat] = useState([]);
-  const [colSatisfied, setColsCluesSat] = useState([]);
+  const [rowsSatisfied, setRowsCluesSat] = useState([]);
+  const [colsSatisfied, setColsCluesSat] = useState([]);
 
   useEffect(() => {
     // Creation of the pengine server instance.    
@@ -24,9 +24,9 @@ function Game() {
   }, []);
 
   useEffect(() => {
-    // Comprobación de si todos los elementos en rowSatisfied y colSatisfied son true.
-    const allRowsSatisfied = rowSatisfied.every(satisfied => satisfied);
-    const allColsSatisfied = colSatisfied.every(satisfied => satisfied);
+    // Comprobación de si todos los elementos en rowsSatisfied y colsSatisfied son true.
+    const allRowsSatisfied = rowsSatisfied.every(satisfied => satisfied);
+    const allColsSatisfied = colsSatisfied.every(satisfied => satisfied);
 
     if (allRowsSatisfied && allColsSatisfied) {
       setGameCompleted(true);
@@ -34,7 +34,7 @@ function Game() {
       setGameCompleted(false);
     }
 
-  }, [rowSatisfied, colSatisfied]);
+  }, [rowsSatisfied, colsSatisfied]);
 
 
   function handleServerReady(instance) {
@@ -76,13 +76,13 @@ function Game() {
       const RowSat = response['RowSat'];
       const ColSat = response['ColSat'];
 
-      const newRowSatisfied = [...rowSatisfied];
-      newRowSatisfied[i] = RowSat;
-      setRowsCluesSat(newRowSatisfied);
+      const newrowsSatisfied = [...rowsSatisfied];
+      newrowsSatisfied[i] = RowSat;
+      setRowsCluesSat(newrowsSatisfied);
 
-      const newColSatisfied = [...colSatisfied];
-      newColSatisfied[j] = ColSat;
-      setColsCluesSat(newColSatisfied);
+      const newcolsSatisfied = [...colsSatisfied];
+      newcolsSatisfied[j] = ColSat;
+      setColsCluesSat(newcolsSatisfied);
       }
       setWaiting(false);
     });
@@ -99,7 +99,7 @@ function Game() {
 
 
   let statusText;
-  if (rowSatisfied.every(satisfied => satisfied) && colSatisfied.every(satisfied => satisfied)) {
+  if (rowsSatisfied.every(satisfied => satisfied) && colsSatisfied.every(satisfied => satisfied)) {
     statusText = "¡Level completed!";
   }else{
     statusText = "Keep playing";
@@ -114,8 +114,8 @@ function Game() {
       rowsClues={rowsClues}
       colsClues={colsClues}
       onClick={(i, j) => handleClick(i, j)}
-      rowSatisfied={rowSatisfied}
-      colSatisfied={colSatisfied}
+      rowsSatisfied={rowsSatisfied}
+      colsSatisfied={colsSatisfied}
       gameCompleted={gameCompleted}
     />
     <div className="game-info" style={{color:'#ece5f0'}}>
