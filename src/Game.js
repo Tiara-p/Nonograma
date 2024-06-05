@@ -15,7 +15,9 @@ function Game() {
   const [gameCompleted, setGameCompleted] = useState(false);
   const [rowsSatisfied, setRowsCluesSat] = useState([]);
   const [colsSatisfied, setColsCluesSat] = useState([]);
-  const [initialCluesChecked, setInitialCluesChecked] = useState(false);
+  const [solutionGrid, setSolutionGrid] = useState([]);
+  const [showSolution, setShowSolution] = useState(false);
+  const [autoFillMode, setAutoFillMode] = useState(false);
 
   useEffect(() => {
     // Creation of the pengine server instance.    
@@ -24,7 +26,6 @@ function Game() {
     PengineClient.init(handleServerReady);
   }, []);
 
-  
   useEffect(() => {
     // Comprobación de si todos los elementos en rowsSatisfied y colsSatisfied son true.
     const allRowsSatisfied = rowsSatisfied.every(satisfied => satisfied);
@@ -32,156 +33,101 @@ function Game() {
 
     if (allRowsSatisfied && allColsSatisfied) {
       setGameCompleted(true);
-    }else{
+    } else {
       setGameCompleted(false);
     }
-
   }, [rowsSatisfied, colsSatisfied]);
-
-  useEffect(() => {
-    // Solo ejecuta checkInitialClues() la primera vez que se actualicen los estados relevantes
-    if (
-      grid &&
-      rowsClues &&
-      colsClues &&
-      rowsSatisfied.length > 0 &&
-      colsSatisfied.length > 0 &&
-      !initialCluesChecked
-    ) {
-      checkInitialRows(grid, rowsClues);
-      checkInitialCols(grid, colsClues);
-      setInitialCluesChecked(true);
-    }
-  }, [grid, rowsClues, colsClues]);
 
   function handleServerReady(instance) {
     pengine = instance;
     const queryS = 'init(RowClues, ColumClues, Grid)';
+    setWaiting(true);
     pengine.query(queryS, (success, response) => {
       if (success) {
-        setGrid(response['Grid']);
-        setRowsClues(response['RowClues']);
-        setColsClues(response['ColumClues']);
-        setRowsCluesSat(Array(response['RowClues'].length).fill(false));
-        setColsCluesSat(Array(response['ColumClues'].length).fill(false));
+        const rowsClues = response['RowClues'];
+        const colsClues = response['ColumClues'];
+        const grid = response['Grid'];
+
+        // Verificación de inicialización
+        console.log("Rows Clues:", rowsClues);
+        console.log("Cols Clues:", colsClues);
+        console.log("Grid:", grid);
+
+        if (Array.isArray(rowsClues) && Array.isArray(colsClues) && Array.isArray(grid)) {
+          setGrid(grid);
+          setRowsClues(rowsClues);
+          setColsClues(colsClues);
+          setRowsCluesSat(Array(rowsClues.length).fill(false));
+          setColsCluesSat(Array(colsClues.length).fill(false));
+
+          // Call solveNonogram after setting rowsClues and colsClues
+          solveNonogram(rowsClues, colsClues,grid);
+        } else {
+          console.error("Received invalid data from Prolog initialization query.");
+        }
+      } else {
+        console.error("La consulta init no tuvo éxito.");
+      }
+      setWaiting(false);
+    });
+  }
+
+  function solveNonogram(rowsClues, colsClues,grid) {
+    const rowsCluesS = JSON.stringify(rowsClues);
+    const colsCluesS = JSON.stringify(colsClues);
+    const gridS = JSON.stringify(grid);
+    const queryS = `solveNonogram(${rowsCluesS}, ${colsCluesS},${gridS}, SolutionGrid)`;
+
+    console.log("Calling solveNonogram with:");
+    console.log("Rows Clues:", rowsClues);
+    console.log("Cols Clues:", colsClues);
+    console.log("Grid:", grid);
+
+    pengine.query(queryS, (success, response) => {
+      if (success) {
+        setSolutionGrid(response['SolutionGrid']);
+        console.log('Nonogram solved:', response['SolutionGrid']);
+      } else {
+        console.error("La consulta solveNonogram no tuvo éxito.");
       }
     });
   }
 
-  function checkInitialRows(grid, rowsClues){
-    if (!grid || !rowsClues || !rowsSatisfied ) {
-      // Si alguna de las variables de estado es nula, no realices la comprobación
-      return;
-    }
-    let newRowsSatisfied = [...rowsSatisfied];
-    for (let i = 0; i < grid.length; i++) {
-      const row = grid[i];
-      const rowModified = row.map(elemento => {
-        // Verificamos si el elemento es '#'
-        if (elemento === '#') {
-          // Si es '#', agregamos comillas dobles
-          return '"#"';
-        } else {
-          // Si no es '#', dejamos el elemento sin modificar
-          return elemento;
-        }
-      });
-      const queryRowS = `getRowStateList(${row.length}, ${row.length}, [${rowModified}], Counter, List)`;
-      let List;
-      setWaiting(true);
-      pengine.query(queryRowS, (success, response) => { 
-        if(success){
-          List = response['List'];
-          if(List== null){
-            List=0;
-          }
-          const queryRowC = `checkLists([${List}], [${rowsClues[i]}] , RowSat)`;
-          pengine.query(queryRowC, (success, response) => {
-            if(success){
-              const RowSat = response['RowSat'];
-              newRowsSatisfied[i] = RowSat;
-              console.log(newRowsSatisfied);
-            }
-          });
-        }
-        setWaiting(false); 
-      });
-    }
-    console.log("estado final : " + newRowsSatisfied)
-    setRowsCluesSat(newRowsSatisfied);
-  }
-
-  function checkInitialCols(grid, colsClues){
-    if (!grid || !colsClues) {
-      // Si alguna de las variables de estado es nula, no realices la comprobación
-      return;
-    }
-    const newColsSatisfied = [...colsSatisfied];
-    for (let j = 0; j < grid[0].length; j++) {
-      const column = grid.map(row => row[j]); // Obtener la columna j
-      const columnModified = column.map(elemento => {
-        // Verificamos si el elemento es '#'
-        if (elemento === '#') {
-          // Si es '#', agregamos comillas dobles
-          return '"#"';
-        } else {
-          // Si no es '#', dejamos el elemento sin modificar
-          return elemento;
-        }
-      });
-      const queryColS = `getRowStateList(${column.length}, ${column.length}, [${columnModified}], Counter, List)`;
-      let List;
-      setWaiting(true);
-      pengine.query(queryColS, (success, response) => { 
-        if(success){
-          List = response['List'];
-          const queryColC = `checkLists([${List}], [${colsClues[j]}] , ColSat)`;
-          pengine.query(queryColC, (success, response) => {
-            if(success){
-              const ColSat = response['ColSat'];
-              newColsSatisfied[j] = ColSat;
-            }
-          });
-        }
-        setWaiting(false);
-      });
-    }
-    setColsCluesSat(newColsSatisfied);
-  }
-
   function handleClick(i, j) {
-    if (waiting || gameCompleted){
+    if (waiting || gameCompleted || showSolution) {
       return;
     }
-  
     // Build Prolog query to make a move and get the new satisfacion status of the relevant clues.    
-    const squaresS = JSON.stringify(grid).replaceAll('"_"', '_'); // Remove quotes for variables. squares = [["X",_,_,_,_],["X",_,"X",_,_],["X",_,_,_,_],["#","#","#",_,_],[_,_,"#","#","#"]]
+    const squaresS = JSON.stringify(grid).replaceAll('"_"', '_'); // Remove quotes for variables.
     let content;
-    if (mode === 'paint') {
-      content = '#';
+    if (autoFillMode) {
+      content = solutionGrid[i][j];
     } else {
-      content = 'X';
+      content = mode === 'paint' ? '#' : 'X';
     }
-     // Content to put in the clicked square.
+    // Content to put in the clicked square.
 
+    console.log("SOlucion  " + solutionGrid);
     const rowsCluesS = JSON.stringify(rowsClues);
     const colsCluesS = JSON.stringify(colsClues);
-    const queryS = `put("${content}", [${i},${j}], ${rowsCluesS}, ${colsCluesS}, ${squaresS}, ResGrid, RowSat, ColSat)`; // queryS = put("#",[0,1],[], [],[["X",_,_,_,_],["X",_,"X",_,_],["X",_,_,_,_],["#","#","#",_,_],[_,_,"#","#","#"]], GrillaRes, FilaSat, ColSat)
+    console.log(rowsCluesS);
+
+    const queryS = `put("${content}", [${i},${j}], ${rowsCluesS}, ${colsCluesS}, ${squaresS}, ResGrid, RowSat, ColSat)`;
     setWaiting(true);
     pengine.query(queryS, (success, response) => {
       if (success) {
         setGrid(response['ResGrid']);
-         // Accede a RowSat y ColSat desde la respuesta de la consulta.
-      const RowSat = response['RowSat'];
-      const ColSat = response['ColSat'];
+        // Accede a RowSat y ColSat desde la respuesta de la consulta.
+        const RowSat = response['RowSat'];
+        const ColSat = response['ColSat'];
 
-      const newrowsSatisfied = [...rowsSatisfied];
-      newrowsSatisfied[i] = RowSat;
-      setRowsCluesSat(newrowsSatisfied);
+        const newrowsSatisfied = [...rowsSatisfied];
+        newrowsSatisfied[i] = RowSat;
+        setRowsCluesSat(newrowsSatisfied);
 
-      const newcolsSatisfied = [...colsSatisfied];
-      newcolsSatisfied[j] = ColSat;
-      setColsCluesSat(newcolsSatisfied);
+        const newcolsSatisfied = [...colsSatisfied];
+        newcolsSatisfied[j] = ColSat;
+        setColsCluesSat(newcolsSatisfied);
       }
       setWaiting(false);
     });
@@ -192,42 +138,54 @@ function Game() {
     setMode(mode === 'paint' ? 'erase' : 'paint');
   }
 
+  function toggleSolution() {
+    setShowSolution(!showSolution);
+  }
+
+  function toggleAutoFillMode() {
+    setAutoFillMode(!autoFillMode);
+  }
+
   if (!grid) {
     return null;
   }
 
-
   let statusText;
   if (rowsSatisfied.every(satisfied => satisfied) && colsSatisfied.every(satisfied => satisfied)) {
     statusText = "¡Level completed!";
-  }else{
+  } else {
     statusText = "Keep playing";
   }
 
   return (
-  <div className="game" style={{ display: 'flex', flexDirection:'column', justifyContent: 'center', alignItems: 'center', height: '100%', width: '100%' }}>
-    <div className="league-spartan-text">
+    <div className="game" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100%', width: '100%' }}>
+      <div className="league-spartan-text">
         Nonograma
+      </div>
+      <Board
+        grid={showSolution ? solutionGrid : grid}
+        rowsClues={rowsClues}
+        colsClues={colsClues}
+        onClick={(i, j) => handleClick(i, j)}
+        rowsSatisfied={rowsSatisfied}
+        colsSatisfied={colsSatisfied}
+        gameCompleted={gameCompleted}
+      />
+      <div className="game-info" style={{ color: '#ece5f0' }}>
+        {statusText}
+        <div className="container">
+          <input type="checkbox" id="check" className="switch-input" checked={mode === 'paint'} onChange={handleModeChange} />
+          <label htmlFor="check" className="button switch-label"></label>
+        </div>
+        <button onClick={toggleSolution}>
+          {showSolution ? 'Hide Solution' : 'Show Solution'}
+        </button>
+        <div className="container">
+          <input type="checkbox" id="autoFillCheck" className="switch-input" checked={autoFillMode} onChange={toggleAutoFillMode} />
+          <label htmlFor="autoFillCheck" className="button switch-label"></label>
+        </div>
+      </div>
     </div>
-    <Board
-      grid={grid}
-      rowsClues={rowsClues}
-      colsClues={colsClues}
-      onClick={(i, j) => handleClick(i, j)}
-      rowsSatisfied={rowsSatisfied}
-      colsSatisfied={colsSatisfied}
-      gameCompleted={gameCompleted}
-    />
-    <div className="game-info" style={{color:'#ece5f0'}}>
-      {statusText}
-      <div className="container">
-        <input type="checkbox" id="check" className="switch-input" checked={mode === 'paint'} onChange={handleModeChange} />
-        <label htmlFor="check" className="button switch-label"></label>
-    </div>
-    </div>
-  </div>
-  
-    
   );
 }
 
