@@ -1,6 +1,8 @@
+
+
 :- module(proylcc,
 	[  
-		put/8
+		put/8, solveNonogram/4
 	]).
 
 :-use_module(library(lists)).
@@ -138,4 +140,210 @@ investList([X|Xs], Y) :- % La List Inverted de [X|Xs] es la concatenación de la
     investList(Xs, InvertedXs),
     append(InvertedXs, [X], Y).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                  Etapa 2                                      %
 
+generate_grid([],Length,[]).
+generate_grid([X|Xs],Length,[Y|Ys]):-
+    generate_list(X,Length,Y),
+    generate_grid(Xs,Length,Ys).
+% Predicado para generar una lista de longitud Length con "#" en las posiciones indicadas por la lista de números Numbers y "_" en las demás posiciones
+generate_list(Numbers, Length, Result) :-
+    generate_list(Numbers, Length, 1, Result).
+
+% Caso base: cuando la lista de números está vacía, llena el resto de la lista con "_"
+generate_list([], Length, Index, Result) :-
+    fill_with_underscore(Index, Length, Result).
+
+% Caso recursivo: cuando hay números en la lista, generamos la lista de acuerdo a esos números
+generate_list([Number|Numbers], Length, Index, [Element|Result]) :-
+    Index =:= Number, % Si el índice actual coincide con el número, colocamos "#" en esa posición
+    Element = '#',
+    NextIndex is Index + 1,
+    generate_list(Numbers, Length, NextIndex, Result).
+
+generate_list([Number|Numbers], Length, Index, [Element|Result]) :-
+    Index =\= Number, % Si el índice actual no coincide con el número, colocamos "_" en esa posición
+    Element = 'X',
+    NextIndex is Index + 1,
+    generate_list([Number|Numbers], Length, NextIndex, Result).
+
+% Predicado auxiliar para llenar el resto de la lista con "_"
+fill_with_underscore(Index, Length, Result) :-
+    Index =< Length,
+    append(['X'], Rest, Result),
+    NextIndex is Index + 1,
+    fill_with_underscore(NextIndex, Length, Rest).
+
+fill_with_underscore(Index, Length, []) :-
+    Index > Length.
+
+% sum(Summ, List) - Summ of elements of List
+sum(0, []).
+sum(Sum, [Head|Tail]) :- sum(K, Tail), Sum is K + Head.
+
+% inRange(I, Low, Hi) I is between Low and Hi
+inRange(Low, Low, High) :- Low =< High.
+inRange(I, Low, High) :- Low < High, LessLow is Low + 1, inRange(I, LessLow, High).
+
+range([N], N, N).
+range([Low|Tail], Low, High) :- Low < High, LesLow is Low + 1, range(Tail, LesLow, High).
+
+
+%%      
+%   Generates all possible combos for passed lines conditions, and length
+%%
+generate(LineCombos, Lines, Size, InitialGrid) :- generate_supp(1, LineCombos, Lines, Size, InitialGrid).
+
+%%
+%   Supportive predicate for generate/4 to include line number
+%%
+generate_supp(_, [], [], _, _).
+generate_supp(LineNumber, [FinalCombos|LineCombosTail], [Line|LinesTail], Size, InitialGrid) :- 
+    findall(Combo, combinate(Line, Size, Combo), Combos),
+    NextLineNumber is LineNumber + 1,
+    ActualIndex is LineNumber - 1,
+    nth0(ActualIndex, InitialGrid, RowGrid),
+    discardCombos(Combos,RowGrid,FinalCombos),
+    generate_supp(NextLineNumber, LineCombosTail, LinesTail, Size, InitialGrid).
+
+%%
+%   Returns possible line for passed conditions and size
+%%
+combinate(Line, Size, Combo) :- 
+    sum(Sum, Line),
+    length(Line, Length),
+    CortegeLength is Sum + Length - 1,
+    combinate_supp(Line, 1, CortegeLength, Size, [], Combo).
+
+%%
+%   Supportive predicate for combinate/3
+%%
+combinate_supp([0], _, _, _, _, []).
+combinate_supp([Number], Start, _, Size, PreCombo, Combo) :- 
+    End is Size - Number + 1,
+    inRange(First, Start, End),
+    Last is First + Number - 1,
+    range(EndCombo, First, Last),
+    append(PreCombo, EndCombo, Combo).
+combinate_supp([Number|Tail], Start, CortegeLength, Size, PreCombo, Combo) :-
+    End is Size - CortegeLength + 1,
+    inRange(First, Start, End),
+    Last is First + Number - 1,
+    range(EndCombo, First, Last),
+    NewCortegeLength is CortegeLength - Number - 1,
+    NewStart is Last + 2,
+    append(PreCombo, EndCombo, LowCombo),
+    combinate_supp(Tail, NewStart, NewCortegeLength, Size, LowCombo, Combo).
+
+%%
+%   Check if a combination is compatible with the initial grid
+%%
+discardCombos(Combos,RowGrid,FinalCombos):-
+    	posiciones_elemento('X',RowGrid,Posiciones),
+    	filtrar_listas(Posiciones,Combos,CombosNoCoincidentes),
+		FinalCombos=CombosNoCoincidentes.
+
+% Predicado para comparar y filtrar listas
+filtrar_listas([], Combos, Combos).
+filtrar_listas([X|Xs], Combos, Resultado) :-
+    eliminar_coincidentes(X, Combos, CombosFiltrados),
+    filtrar_listas(Xs, CombosFiltrados, Resultado).
+
+% Predicado auxiliar para eliminar listas que contienen el elemento X
+eliminar_coincidentes(_, [], []).
+eliminar_coincidentes(X, [Lista|Listas], Resultado) :-
+    (   member(X, Lista)
+    ->  eliminar_coincidentes(X, Listas, Resultado)
+    ;   eliminar_coincidentes(X, Listas, Resto),
+        Resultado = [Lista|Resto]).
+
+% Predicado para encontrar la posición de un elemento en una lista.
+encontrar_posiciones(_, [], [], _).
+encontrar_posiciones(Elemento, [Elemento|Resto], [Posicion|RestoPosiciones], Posicion) :-
+    PosicionActual is Posicion + 1,
+    encontrar_posiciones(Elemento, Resto, RestoPosiciones, PosicionActual).
+encontrar_posiciones(Elemento, [Distinto|Resto], Posiciones, Posicion) :-
+    Distinto \= Elemento,
+    PosicionActual is Posicion + 1,
+    encontrar_posiciones(Elemento, Resto, Posiciones, PosicionActual).
+
+% Predicado principal para encontrar posiciones de un elemento en una lista
+posiciones_elemento(Elemento, Lista, Posiciones) :-
+    encontrar_posiciones(Elemento, Lista, Posiciones, 1).
+
+% Combina listas seleccionando un elemento de cada sublista
+combine([], []).
+combine([Sublist|Rest], [Element|Combination]) :-
+    member(Element, Sublist),
+    combine(Rest, Combination).
+
+% Genera todas las combinaciones posibles
+generate_combinations(List, Combinations) :-
+    findall(Combination, combine(List, Combination), Combinations).
+
+
+
+%   Solving nonograms.
+%%
+solveNonogram(Rows,Cols,InitialGrid,Solution):-
+    length(Rows, VSize),
+    length(Cols, HSize),
+    generate(RowCombos, Rows, HSize, InitialGrid),
+	transpose(InitialGrid, TInitialGrid),
+    generate(ColsCombos, Cols, VSize,TInitialGrid),
+    generate_combinations(RowCombos,RCombosCombinationsList),
+	generate_combinations(ColsCombos,CCombosCombinationsList),
+	find_matching_list(RCombosCombinationsList,CCombosCombinationsList,FinalGrid),
+	generate_grid(FinalGrid,HSize,Solution).
+
+% Check if an element exists at specific positions in sublists of a list of lists
+check_positions(_, [], _).
+check_positions(Element, [PositionA|PositionsA], Positions, ListOfLists) :-
+    nth1(PositionA, ListOfLists, SubList),
+    member(Element, SubList),
+    check_positions(Element, PositionsA,Positions, ListOfLists),!.
+check_positions(Element,[PositionA],_,ListOfLists):-
+    nth1(PositionA, ListOfLists, SubList),
+    member(Element, SubList).
+
+% Main predicate to check if a sublist from A matches any sublist from B
+match_lists([], _, _).
+match_lists([SublistA|RestA], ListB, Index) :-
+    Index1 is Index + 1,
+    findall(Index1, between(1, Index1, Index1), Positions),
+    check_positions(Index1, SublistA ,Positions, ListB),
+    match_lists(RestA, ListB, Index1).
+
+% Predicate to check if a single list from A matches any list from B
+match_single_list_with_any([], _, false).
+match_single_list_with_any([ListB|RestB], ListA, Result) :-
+    (   match_lists(ListA, ListB, 0)
+    ->  Result = true
+    ;   match_single_list_with_any(RestB, ListA, Result)
+    ).
+
+% Predicate to find the first matching list from A with any list from B
+find_first_matching_list([], _, []).
+find_first_matching_list([ListA|RestA], ListB, Result) :-
+    (   match_single_list_with_any(ListB, ListA, true)
+    ->  Result = ListA
+    ;   find_first_matching_list(RestA, ListB, Result)
+    ).
+
+% Helper predicate to start with the right initial index
+find_matching_list(A, B, Matched) :-
+    find_first_matching_list(A, B, Matched).
+
+
+transpose([], []).
+transpose([[]|_], []).
+transpose(Matrix, [FirstCol|Transposed]) :-
+    transpose_1st_col(Matrix, FirstCol, RestMatrix),
+    transpose(RestMatrix, Transposed).
+
+transpose_1st_col([], [], []).
+transpose_1st_col([[X|Xs]|RestMatrix], [X|Col], [Xs|RestMatrix1]) :-
+    transpose_1st_col(RestMatrix, Col, RestMatrix1).
