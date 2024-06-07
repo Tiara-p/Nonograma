@@ -133,6 +133,24 @@ input{
   margin-bottom: 10px;
 }
 
+.solution {
+  background-color: #d2d2d2;
+  color: #073430;
+  font-family: "League Spartan", sans-serif;
+  font-size: 20px;
+  border: none;
+  border-radius: 20px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.solution:hover {
+  background-color: #e98a15;
+  color: #fff;
+}
+
+
 
 
 
