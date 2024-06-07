@@ -62,6 +62,7 @@ function Game() {
 
           // Call solveNonogram after setting rowsClues and colsClues
           solveNonogram(rowsClues, colsClues,grid);
+          checkInitialClues(rowsClues, colsClues,grid);
         } else {
           console.error("Received invalid data from Prolog initialization query.");
         }
@@ -70,6 +71,24 @@ function Game() {
       }
       setWaiting(false);
     });
+  }
+
+  function checkInitialClues(rowsClues, colsClues,grid){
+    const rowsCluesS = JSON.stringify(rowsClues);
+    const colsCluesS = JSON.stringify(colsClues);
+    const gridS = JSON.stringify(grid);
+    const queryS =`check_initial_clues(${rowsCluesS}, ${colsCluesS},${gridS}, StateRowsClues,StateColsClues)`;
+
+    pengine.query(queryS, (success, response) => {
+      if (success) {
+        setRowsCluesSat(response['StateRowsClues']);
+        setColsCluesSat(response['StateColsClues']);
+
+      } else {
+        console.error("La consulta check_initial_clues no tuvo éxito.");
+      }
+    });
+
   }
 
   function solveNonogram(rowsClues, colsClues,grid) {
@@ -152,15 +171,15 @@ function Game() {
 
   let statusText;
   if (rowsSatisfied.every(satisfied => satisfied) && colsSatisfied.every(satisfied => satisfied)) {
-    statusText = "¡Level completed!";
+    statusText = " ¡Level completed!";
   } else {
-    statusText = "Keep playing";
+    statusText = " Keep playing";
   }
 
   return (
     <div className="game" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100%', width: '100%' }}>
       <div className="league-spartan-text">
-        Nonograma
+        Nonogram
       </div>
       <Board
         grid={showSolution ? solutionGrid : grid}
@@ -169,7 +188,7 @@ function Game() {
         onClick={(i, j) => handleClick(i, j)}
         rowsSatisfied={rowsSatisfied}
         colsSatisfied={colsSatisfied}
-        gameCompleted={gameCompleted}
+        gameComplet ed={gameCompleted}
       />
       <div className="game-info" style={{ color: '#ece5f0' }}>
         {statusText}
@@ -177,13 +196,14 @@ function Game() {
           <input type="checkbox" id="check" className="switch-input" checked={mode === 'paint'} onChange={handleModeChange} />
           <label htmlFor="check" className="button switch-label"></label>
         </div>
-        <button onClick={toggleSolution}>
+        <button onClick={toggleSolution} class="solution">
           {showSolution ? 'Hide Solution' : 'Show Solution'}
         </button>
         <div className="container">
           <input type="checkbox" id="autoFillCheck" className="switch-input" checked={autoFillMode} onChange={toggleAutoFillMode} />
           <label htmlFor="autoFillCheck" className="button switch-label"></label>
         </div>
+        <span> auto-fill mode</span>
       </div>
     </div>
   );

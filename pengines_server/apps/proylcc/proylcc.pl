@@ -2,7 +2,7 @@
 
 :- module(proylcc,
 	[  
-		put/8, solveNonogram/4
+		put/8, solveNonogram/4,check_initial_clues/5
 	]).
 
 :-use_module(library(lists)).
@@ -39,15 +39,15 @@ put(Content, [RowN, ColN], RowsClues, ColsClues, Grid, NewGrid, RowSat, ColSat):
 	replace(_Cell, ColN, Content, Row, NewRow)),
 	investVertically(NewGrid,InvertedGrid),
 	numberOfRows(NewGrid,ColLenght),
-	getColStateList(ColLenght,ColLenght,InvertedGrid,ColN,Counter, List),
+	getColStateList(ColLenght,ColLenght,InvertedGrid,ColN,_Counter, List), 
 	nth0(ColN,ColsClues,ColNClues),
 	checkLists(List,ColNClues,ColSat),
 	numberOfCols(NewGrid,RowLenght),
 	nth0(RowN,NewGrid,RowNList),
-	getRowStateList(RowLenght,RowLenght,RowNList,CounterR,RList),
+	getRowStateList(RowLenght,RowLenght,RowNList,_CounterR,RList),
 	investList(RList,RListInverted),
 	nth0(RowN,RowsClues,RowNClues),
-	checkLists(RListInverted,RowNClues,RowSat).
+	checkLists(RListInverted,RowNClues,RowSat). 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -135,17 +135,72 @@ investVertically([Fila|Filas], MatrizInverted) :-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-	investList([], []). % La List vacía se invierte en la List vacía
+investList([], []). % La List vacía se invierte en la List vacía
 investList([X|Xs], Y) :- % La List Inverted de [X|Xs] es la concatenación de la List Inverted de Xs con [X]
     investList(Xs, InvertedXs),
     append(InvertedXs, [X], Y).
+
+
+
+% Asegúrate de definir `reverse/2` si no está disponible.
+%reverse([], []).
+%reverse([H|T], R) :-
+    %reverse(T, RevT),
+    %append(RevT, [H], R).
+
+check_initial_clues(RowsClues, ColClues, InitialGrid, StateR, StateC):-
+    numberOfRows(InitialGrid, NRows),
+    numberOfCols(InitialGrid, NCols),
+    getInitialRowsClues(NRows, NRows, InitialGrid, InitialRCluesList),
+    investList(InitialGrid,InitialInvertedGrid),
+    getInitialColsClues(NCols, NCols, InitialInvertedGrid, InitialCCluesList),
+    checkCluesList(NRows, RowsClues, InitialRCluesList, StateR),
+    checkCluesList(NCols, ColClues, InitialCCluesList, StateC).
+
+getInitialRowsClues(Length, 1, InitialGrid, ResultR):-
+    nth0(0,InitialGrid,Fila),
+    getRowStateList(Length, Length, Fila, _Counter, Result),
+    reverse(Result, InvertedResult),
+    append([InvertedResult],[],ResultR).
+
+getInitialRowsClues(Length, NRows, InitialGrid, InitialRCluesList):-
+    NRowsAux is NRows-1,
+    getInitialRowsClues(Length, NRowsAux, InitialGrid, FormerList),
+    nth0(NRowsAux,InitialGrid,RowN),
+    getRowStateList(Length, Length, RowN, _Counter, List),
+     reverse(List, InvertedList),
+    append(FormerList, [InvertedList], InitialRCluesList).
+
+getInitialColsClues(Length, 1, InitialInvertedGrid, ResultC):-
+    getColStateList(Length,Length, InitialInvertedGrid, 0, _Counter, List),
+    append([List], [], ResultC).
+
+getInitialColsClues(Length, NCols, InitialInvertedGrid, InitialCCluesList):-
+    NColsAux is NCols-1,
+    getInitialColsClues(Length, NColsAux, InitialInvertedGrid, FormerList),
+    getColStateList(Length, Length, InitialInvertedGrid, NColsAux, _Counter, List),
+    append(FormerList, [List], InitialCCluesList).
+
+checkCluesList(1, RowsClues, InitialGrid, [Result]):-
+    nth0(0, RowsClues, RE),
+    nth0(0, InitialGrid, IRE),
+    checkLists(RE, IRE, Result).
+
+checkCluesList(NRows, RowsClues, InitialRCluesList, State):-
+    NRows > 0,
+    NRowsAux is NRows - 1,
+    checkCluesList(NRowsAux, RowsClues, InitialRCluesList, PreviousState),
+    nth0(NRowsAux, RowsClues, RE),
+    nth0(NRowsAux, InitialRCluesList, IRE),
+    checkLists(RE, IRE, Result),    
+    append(PreviousState, [Result], State).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                                  Etapa 2                                      %
 
-generate_grid([],Length,[]).
+generate_grid([],_Length,[]).
 generate_grid([X|Xs],Length,[Y|Ys]):-
     generate_list(X,Length,Y),
     generate_grid(Xs,Length,Ys).
