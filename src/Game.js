@@ -27,7 +27,7 @@ function Game() {
   }, []);
 
   useEffect(() => {
-    // Comprobación de si todos los elementos en rowsSatisfied y colsSatisfied son true.
+
     const allRowsSatisfied = rowsSatisfied.every(satisfied => satisfied);
     const allColsSatisfied = colsSatisfied.every(satisfied => satisfied);
 
@@ -60,11 +60,11 @@ function Game() {
           setRowsCluesSat(Array(rowsClues.length).fill(false));
           setColsCluesSat(Array(colsClues.length).fill(false));
 
-          // Call solveNonogram after setting rowsClues and colsClues
+          
           solveNonogram(rowsClues, colsClues,grid);
           checkInitialClues(rowsClues, colsClues,grid);
         } else {
-          console.error("Received invalid data from Prolog initialization query.");
+          console.error("Se recibieron datos no validos de la consulta a Prolog.");
         }
       } else {
         console.error("La consulta init no tuvo éxito.");
@@ -98,9 +98,9 @@ function Game() {
     const queryS = `solveNonogram(${rowsCluesS}, ${colsCluesS},${gridS}, SolutionGrid)`;
 
     console.log("Calling solveNonogram with:");
-    console.log("Rows Clues:", rowsClues);
-    console.log("Cols Clues:", colsClues);
-    console.log("Grid:", grid);
+    console.log("Rows Clues:", rowsCluesS);
+    console.log("Cols Clues:", colsCluesS);
+    console.log("Grid:", gridS);
 
     pengine.query(queryS, (success, response) => {
       if (success) {
@@ -116,15 +116,14 @@ function Game() {
     if (waiting || gameCompleted || showSolution) {
       return;
     }
-    // Build Prolog query to make a move and get the new satisfacion status of the relevant clues.    
-    const squaresS = JSON.stringify(grid).replaceAll('"_"', '_'); // Remove quotes for variables.
+    
+    const squaresS = JSON.stringify(grid).replaceAll('"_"', '_'); 
     let content;
     if (autoFillMode) {
       content = solutionGrid[i][j];
     } else {
       content = mode === 'paint' ? '#' : 'X';
     }
-    // Content to put in the clicked square.
 
     console.log("SOlucion  " + solutionGrid);
     const rowsCluesS = JSON.stringify(rowsClues);
@@ -136,7 +135,7 @@ function Game() {
     pengine.query(queryS, (success, response) => {
       if (success) {
         setGrid(response['ResGrid']);
-        // Accede a RowSat y ColSat desde la respuesta de la consulta.
+
         const RowSat = response['RowSat'];
         const ColSat = response['ColSat'];
 
@@ -153,7 +152,7 @@ function Game() {
   }
 
   function handleModeChange() {
-    // Cambiar entre los modos 'paint' y 'erase'
+
     setMode(mode === 'paint' ? 'erase' : 'paint');
   }
 
@@ -179,7 +178,7 @@ function Game() {
   return (
     <div className="game" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100%', width: '100%' }}>
       <div className="league-spartan-text">
-        Nonogram
+         Nonogram
       </div>
       <Board
         grid={showSolution ? solutionGrid : grid}
