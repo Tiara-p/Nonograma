@@ -302,16 +302,16 @@ findMatchingList(A, B, Matched) :-
 
 findFirstMatchingList([], _, []).
 findFirstMatchingList([List|RestA], ListB, Result) :-
-    (   match_single_list_with_any(ListB, List, true)
+    (   matchSingleListWithAny(ListB, List, true)
     ->  Result = List
     ;   findFirstMatchingList(RestA, ListB, Result)
     ).
 
-match_single_list_with_any([], _, false).
-match_single_list_with_any([ListB|RestB], List, Result) :-
+matchSingleListWithAny([], _, false).
+matchSingleListWithAny([ListB|RestB], List, Result) :-
     (   matchLists(List, ListB, 0)
     ->  Result = true
-    ;   match_single_list_with_any(RestB, List, Result)
+    ;   matchSingleListWithAny(RestB, List, Result)
     ).
 
 matchLists([], _, _).
